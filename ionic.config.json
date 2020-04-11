@@ -1,0 +1,7 @@
+{
+  "name": "unsplashProject",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}
