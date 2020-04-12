@@ -8,9 +8,13 @@ import {
   IonTabBar,
   IonTabButton,
   IonTabs,
+  IonContent,
+  IonList,
+  IonItem,
+  IonToggle,
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { heart, home, download } from 'ionicons/icons';
+import { heart, home, download, moon } from 'ionicons/icons';
 import Liked from './pages/Liked';
 import Home from './pages/Home';
 import Downloads from './pages/Downloads';
@@ -44,6 +48,7 @@ const App: React.FC = () => (
           <Route path='/downloads' component={Downloads} />
           <Route path='/' render={() => <Redirect to='/home' />} exact={true} />
         </IonRouterOutlet>
+
         <IonTabBar slot='bottom'>
           <IonTabButton tab='tab1' href='/liked'>
             <IonIcon icon={heart} />

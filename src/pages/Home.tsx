@@ -6,45 +6,56 @@ import {
   IonTitle,
   IonToolbar,
   IonSearchbar,
+  IonCard,
+  IonList,
 } from '@ionic/react';
 import ExploreContainer from '../components/ExploreContainer';
-import Unsplash, { toJson } from 'unsplash-js';
+import fetch from 'node-fetch';
 import axios from 'axios';
 import './Home.css';
+import Toggle from '../components/Toggle';
 
-require('dotenv').confid();
+require('dotenv').config();
 
-const REACT_APP_API_KEY = process.env.API_KEY;
+const API_KEY = '3za5nSrvbEgp_yu7U2oknDbXgzzmz5YonO8angKgUIY';
 
 const Home: React.FC = () => {
   const [images, setImages] = useState(['']);
   const [loaded, setIsLoaded] = useState(false);
   const [searchText, setSearchText] = useState('');
 
-  // SET API KEY
-  const unsplash = new Unsplash({ accessKey: { REACT_APP_API_KEY } });
-
-  const fetchImages = ({ count = 9 }) => {
-    const apiRoot = 'https://source.unsplash.com';
+  const fetchImages = (count: number) => {
+    const apiRoot = 'https://api.unsplash.com';
     const accessKey = API_KEY;
 
-    unsplash.photos
-      .getRandomPhoto({ count: { count }, collections: 'town' })
-      .then(toJson)
-      .then((json: { data: any }) => {
-        setImages([...images, ...json.data]);
-        setIsLoaded(true);
-      });
+    // unsplash.photos
+    //   .getRandomPhoto({ count: count, collections: ['town'] })
+    //   .then(toJson)
+    //   .then((json) => {
+    //     console.log(json);
+    //     // Your code
+    //   });
     axios
       .get(`${apiRoot}/photos/random?client_id=${accessKey}&count=${count}`)
       .then((res) => {
-        setImages([...images, ...res.data]);
+        console.log(res);
+        // setImages({ data: res.data });
         setIsLoaded(true);
+      });
+    console.log(images);
+  };
+  const onSearchSubmit = async (term: string) => {
+    axios
+      .get('https://source.unsplash.com/collection/town/480x480')
+      .then(({ request }) => {
+        // setImages([...images, res.data]);
+        // setImages([...images, request['responseURL']]);
+        setImages([request['responseURL']]);
       });
   };
 
-  React.useEffect(() => {
-    fetchImages();
+  useEffect(() => {
+    onSearchSubmit('town');
   }, []);
 
   return (
@@ -60,10 +71,24 @@ const Home: React.FC = () => {
             <IonTitle size='large'>Home</IonTitle>
           </IonToolbar>
         </IonHeader>
+
         <IonSearchbar
           value={searchText}
           onIonChange={(e) => setSearchText(e.detail.value!)}></IonSearchbar>
-        <div>This is wehere the images will go</div>
+        <br></br>
+        <div>This is where the images will go</div>
+
+        {images.map((image: string, i) => (
+          <IonList key={i}>
+            <IonCard
+              className='ion-align-self-center ion-padding'
+              slot='center'>
+              <div className='ion-align-items-center'>
+                <img width='480px' height='480px' src={image} />
+              </div>
+            </IonCard>
+          </IonList>
+        ))}
       </IonContent>
     </IonPage>
   );
