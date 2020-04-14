@@ -1,3 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+
 ion-content ion-toolbar {
   --background: translucent;
+}
+
+.polaroid {
+  width: 420px;
+  display: block;
+  margin: auto;
+}
+.endButton {
+  float: right;
+}
+
+.polaroid-title {
+  font-family: 'Permanent Marker';
+  font-size: '50px';
 }

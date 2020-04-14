@@ -8,55 +8,85 @@ import {
   IonSearchbar,
   IonCard,
   IonList,
+  IonCol,
+  IonIcon,
+  IonCardSubtitle,
+  IonRow,
 } from '@ionic/react';
-import ExploreContainer from '../components/ExploreContainer';
-import fetch from 'node-fetch';
 import axios from 'axios';
 import './Home.css';
-import Toggle from '../components/Toggle';
+import { download, shuffle } from 'ionicons/icons';
+import moment from 'moment';
+import { usePhotoGallery } from '../hooks/usePhotoGallery';
 
 require('dotenv').config();
 
-const API_KEY = '3za5nSrvbEgp_yu7U2oknDbXgzzmz5YonO8angKgUIY';
+const API_KEY = process.env.REACT_APP_API_KEY;
+
+export interface Image {
+  id: string;
+  url: string;
+  webPath: string;
+  user: string;
+  exif: string;
+  location: string;
+}
 
 const Home: React.FC = () => {
-  const [images, setImages] = useState(['']);
+  const [images, setImages] = useState<Image[]>([]);
   const [loaded, setIsLoaded] = useState(false);
+  const [status, setStatus] = useState('');
   const [searchText, setSearchText] = useState('');
+  const { downloadPhoto } = usePhotoGallery();
 
-  const fetchImages = (count: number) => {
+  const keyPressed = (e: any) => {
+    if (e.key === 'Enter') {
+      fetchImages(1, searchText);
+      setSearchText('');
+    }
+  };
+
+  const fetchImages = (count: number, query: string) => {
     const apiRoot = 'https://api.unsplash.com';
-    const accessKey = API_KEY;
+    let getUrl = `${apiRoot}/photos/random/?query=${query}&orientation=squarish&client_id=${API_KEY}&count=${count}`;
 
-    // unsplash.photos
-    //   .getRandomPhoto({ count: count, collections: ['town'] })
-    //   .then(toJson)
-    //   .then((json) => {
-    //     console.log(json);
-    //     // Your code
-    //   });
-    axios
-      .get(`${apiRoot}/photos/random?client_id=${accessKey}&count=${count}`)
-      .then((res) => {
-        console.log(res);
-        // setImages({ data: res.data });
+    // this is for development!
+    if (API_KEY !== null) {
+      if (query === 'random') {
+        getUrl = `${apiRoot}/photos/random/?orientation=squarish&client_id=${API_KEY}&count=${count}`;
+      }
+      console.log(getUrl);
+      axios.get(getUrl).then((res) => {
+        if (res.status === 403) {
+          setStatus('limited');
+        }
+        let temp = res.data[0];
+        let tempData = {
+          id: temp.id,
+          url: temp.urls.regular,
+          webPath: temp.urls.raw,
+          user: temp.user.name,
+          exif: temp.exif,
+          location: temp.location.name,
+        };
+        setImages([tempData]);
         setIsLoaded(true);
       });
-    console.log(images);
-  };
-  const onSearchSubmit = async (term: string) => {
-    axios
-      .get('https://source.unsplash.com/collection/town/480x480')
-      .then(({ request }) => {
-        // setImages([...images, res.data]);
-        // setImages([...images, request['responseURL']]);
-        setImages([request['responseURL']]);
-      });
+    }
   };
 
   useEffect(() => {
-    onSearchSubmit('town');
+    fetchImages(1, 'old+town');
   }, []);
+
+  const getRandomImage = () => {
+    fetchImages(1, 'random');
+  };
+
+  const getDate = () => {
+    const date = moment().utcOffset('+05:30').format('DD MMM YYYY');
+    return date;
+  };
 
   return (
     <IonPage>
@@ -66,29 +96,61 @@ const Home: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <IonHeader collapse='condense'>
-          <IonToolbar>
-            <IonTitle size='large'>Home</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+        <IonRow>
+          <IonCol size='1'></IonCol>
+          <IonCol size='10'>
+            <IonSearchbar
+              value={searchText}
+              onIonChange={(e) => setSearchText(e.detail.value!)}
+              onKeyPress={(e) => keyPressed(e)}></IonSearchbar>
+          </IonCol>
+          <IonCol size='1'></IonCol>
+        </IonRow>
 
-        <IonSearchbar
-          value={searchText}
-          onIonChange={(e) => setSearchText(e.detail.value!)}></IonSearchbar>
         <br></br>
-        <div>This is where the images will go</div>
-
-        {images.map((image: string, i) => (
-          <IonList key={i}>
-            <IonCard
-              className='ion-align-self-center ion-padding'
-              slot='center'>
-              <div className='ion-align-items-center'>
-                <img width='480px' height='480px' src={image} />
-              </div>
-            </IonCard>
-          </IonList>
-        ))}
+        {loaded ? (
+          images.map((image, i) => (
+            <IonList key={i}>
+              <IonCard
+                className='polaroid ion-padding ion-padding-bottom'
+                slot='center'>
+                <img width='380px' height='380px' alt='' src={image.webPath} />
+                <br></br>
+                <IonCardSubtitle>
+                  <div className='polaroid-title ion-text-lg-center'>
+                    {getDate()}
+                  </div>
+                </IonCardSubtitle>
+              </IonCard>
+              <IonRow>
+                <IonCol></IonCol>
+                <IonCol className='ion-text-center'>
+                  <button>
+                    <IonIcon
+                      icon={shuffle}
+                      size='large'
+                      onClick={(e) => {
+                        getRandomImage();
+                      }}></IonIcon>
+                  </button>
+                  <button>
+                    <IonIcon
+                      icon={download}
+                      size='large'
+                      onClick={(e) => {
+                        downloadPhoto(image);
+                      }}></IonIcon>
+                  </button>
+                </IonCol>
+                <IonCol></IonCol>
+              </IonRow>
+            </IonList>
+          ))
+        ) : status === 'limited' ? (
+          <div>API Limit Exceeded!</div>
+        ) : (
+          <div>Please wait!</div>
+        )}
       </IonContent>
     </IonPage>
   );
